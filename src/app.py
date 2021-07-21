@@ -1,17 +1,34 @@
-from flask import Flask, render_template, request, redirect, url_for, session
-import wikipedia
-import re
-from src.drivers import Driver
+from flask import Flask, render_template, request, redirect, url_for, session, make_response
+from flasgger import Swagger
+
+from drivers import Driver
+from utils import wiki
+from api import CustomApi, DriverApi, DriversListApi, ReportApi
+
 
 app = Flask(__name__)
 app.secret_key = 'dev'
 
+api = CustomApi(app)
 
-def wiki(driver_name: str) -> str:
-    """Return the info about driver from wikipedia"""
-    content = wikipedia.page(driver_name).content
-    with_headings = re.sub(r'=+\s*(.*?)\s*=+', r'<b>\1</b>', content)
-    return with_headings
+swagger = Swagger(app)
+
+@app.route('/debug')
+def debug():
+    import operator
+    mediatypes_or = [h for h, q in sorted(request.accept_mimetypes,
+                                     key=operator.itemgetter(1), reverse=True)]
+    accept_mimetypes = request.accept_mimetypes
+    mod_mediatypes = ['application/xml'] + mediatypes_or
+
+
+    context = {
+        'original mediatypes' : mediatypes_or,
+        'request.accept_mimetypes' : repr(accept_mimetypes),
+        'mod mediatypes' : mod_mediatypes,
+    }
+    return render_template('base.html', context=context)
+
 
 
 @app.route('/report', methods=['GET', 'POST'])
@@ -73,6 +90,7 @@ def home() -> "Response":
 def page_not_found(error):
     return render_template('base.html', error=404)
 
+
 @app.errorhandler(500)
 def internal_error(error):
     return render_template('base.html', context=500)
@@ -80,4 +98,7 @@ def internal_error(error):
 
 if __name__ == '__main__':
     Driver.build_report()
+    api.add_resource(DriversListApi, '/api/v1/drivers/')
+    api.add_resource(DriverApi, '/api/v1/drivers/<name>/')
+    api.add_resource(ReportApi, '/api/v1/report/')
     app.run()

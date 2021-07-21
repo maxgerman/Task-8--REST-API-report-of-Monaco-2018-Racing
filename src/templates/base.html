@@ -41,6 +41,14 @@
 </div>
 
 
+{% block debug %}
+<ul>
+    {% for key in context %}
+    <li><h3>{{key}}: </h3> {{ context[key] }}</li>
+    {% endfor %}
+</ul>
+{% endblock debug %}
+
 
 
 <div class="container">

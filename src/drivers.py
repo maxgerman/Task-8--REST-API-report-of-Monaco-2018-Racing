@@ -158,9 +158,20 @@ class Driver:
 
     @staticmethod
     def get_by_id(driver_id) -> list:
-        """Return driver object by id or name. Return None if not found"""
+        """Return the list with driver object by id or name. Return empty list if not found"""
         for d in Driver._driver_list:
             if driver_id.lower() in d.name.lower() or driver_id.lower() in d.abbr.lower():
                 return [d]
         else:
             return []
+
+    def driver_info_dictionary(self):
+        """Return the driver info as a dictionary. Used for api"""
+        return {
+            'name': self.name,
+            'abbr': self.abbr,
+            'team': self.team,
+            'start_time': str(self.start_time)[:-3],
+            'stop_time': str(self.stop_time)[:-3],
+            'best_lap_time': str(self.best_lap)[:-3],
+        }
