@@ -19,12 +19,30 @@ class CustomApi(Api):
     @staticmethod
     def output_xml(data, code, headers=None):
         """Make a Flask response with a xml body. Used as a custom representation for API resources"""
-        data = '<XML><data>data1</data></XML>'
-        resp = make_response(data)
+
+        def dict_to_tree_recursive(src_dict: dict, root: ET.ElementTree = None) -> ET.ElementTree:
+            """Convert data dict to the Element object (with all children) recursively.
+            src_dict (data) is always a dict with a single key at the top level -- this is used as the root tag"""
+            if root is None:
+                src_top_key = next(iter(src_dict.keys()))
+                root = ET.Element(src_top_key)
+
+            for key, value in src_dict.items():
+                child = ET.SubElement(root, key)
+                if isinstance(value, dict):
+                    dict_to_tree_recursive(value, child)
+                else:
+                    child.text = value
+            return root
+
+        # data = '<XML><data>data1</data></XML>'
+
+        tree = dict_to_tree_recursive(data)
+        xml_string = ET.tostring(tree, xml_declaration=True, encoding="utf-8")
+        resp = make_response(xml_string)
         headers = {'X-my-output-function': 'output_xml'}
         resp.headers.extend(headers or {})
         return resp
-
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -45,7 +63,7 @@ class CustomApi(Api):
 
     def mediatypes_method(self):
         """Return a method that returns a list of mediatypes"""
-        return lambda resource_cls: ['application/json'] #+ self.mediatypes() + [self.default_mediatype]
+        return lambda resource_cls: ['application/json']  # + self.mediatypes() + [self.default_mediatype]
 
 
 class DriversListApi(Resource):
@@ -69,7 +87,7 @@ class DriversListApi(Resource):
          """
         drivers_dic = {'drivers': {}}
         for ind, d in enumerate(Driver.all()):
-            drivers_dic['drivers'].update({f'driver{ind+1}': d.driver_info_dictionary()})
+            drivers_dic['drivers'].update({f'driver{ind + 1}': d.driver_info_dictionary()})
         return drivers_dic
 
 
@@ -114,8 +132,6 @@ class DriverApi(Resource):
             pass
 
 
-
-
 class ReportApi(Resource):
     def get(self):
         asc_order = True
@@ -123,7 +139,5 @@ class ReportApi(Resource):
         drivers = Driver.all()
         drivers.sort(key=lambda d: d.best_lap)
         for ind, d in enumerate(drivers):
-            report_dic['report'].update({f'place{ind+1}': d.driver_info_dictionary()})
+            report_dic['report'].update({f'place{ind + 1}': d.driver_info_dictionary()})
         return report_dic
-
-
