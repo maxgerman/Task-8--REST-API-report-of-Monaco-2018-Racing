@@ -6,33 +6,19 @@ import xml.etree.ElementTree as ET
 from drivers import Driver
 
 
-class InterceptRequestMiddleware:
-    """Middleware to manually set request headers.
-    The 'mime' var of this class will be used to set the api format (json/xml) instead of the original request headers.
-    The problem: this setting takes effect only from the second request (load the page and then reload to switch format),
-    even with the use of @before_request decorated function
-    """
-
-    mime = 'application/json'
-
-    def __init__(self, wsgi_app):
-        self.wsgi_app = wsgi_app
-
-    def __call__(self, environ, start_response):
-        """ request cannot be accessed here (outside of request context) like this:
-        format = 'xml' if request.args.get('format') == 'xml' else 'json' """
-        environ['HTTP_ACCEPT'] = InterceptRequestMiddleware.mime
-        return self.wsgi_app(environ, start_response)
-
-
 class CustomApi(Api):
+    """
+    Custom flask_restful Api class for:
+        - providing additional representation to accept (xml)
+        - output function to convert data (dicts) to xml strings
+    """
 
     @staticmethod
     def output_xml(data, code, headers=None):
-        """Make a Flask response with a xml body. Used as a custom representation for API resources"""
+        """Make a Flask response with a xml body (output function for xml representation, which we added in __init__)"""
 
         def dict_to_tree_recursive(src_dict: dict, root: ET.Element = None) -> ET.ElementTree:
-            """Convert data dict to the Element object (with all children) recursively.
+            """Convert the data dict to the etree.Element object (including all children) recursively.
             src_dict (data) is always a dict with a single key at the top level -- this is used as the root tag"""
             if root is None:
                 src_top_key = next(iter(src_dict.keys()))
@@ -60,9 +46,11 @@ class CustomApi(Api):
         }
 
 
-
 class DriversListApi(Resource):
     def get(self):
+        request.environ['HTTP_ACCEPT'] = 'application/xml' if request.args.get(
+            'format') == 'xml' else 'application/json'
+
         drivers_dic = {'drivers': {}}
         for ind, d in enumerate(Driver.all()):
             drivers_dic['drivers'].update({f'driver{ind + 1}': d.driver_info_dictionary()})
@@ -71,24 +59,21 @@ class DriversListApi(Resource):
 
 class DriverApi(Resource):
     def get(self, name):
+        request.environ['HTTP_ACCEPT'] = 'application/xml' if request.args.get(
+            'format') == 'xml' else 'application/json'
 
-
-        args = parser.parse_args()
-        format = 'xml' if args['format'] == 'xml' else 'json'
-        if format == 'json':
-            try:
-                d = Driver.get_by_id(name)[0].driver_info_dictionary()
-                result_dic = {'driver': d}
-            except IndexError:
-                return {'error': f'driver \'{name}\' not found'}
-            return result_dic
-        else:
-            pass
+        try:
+            d = Driver.get_by_id(name)[0].driver_info_dictionary()
+            result_dic = {'driver': d}
+        except IndexError:
+            return {'error': f'driver \'{name}\' not found'}
+        return result_dic
 
 
 class ReportApi(Resource):
     def get(self):
-        InterceptRequestMiddleware.mime = 'application/xml'
+        request.environ['HTTP_ACCEPT'] = 'application/xml' if request.args.get(
+            'format') == 'xml' else 'application/json'
 
         asc_order = True
         report_dic = {'report': {}}

@@ -9,6 +9,3 @@ def wiki(driver_name: str) -> str:
     wiki_text = wikipedia.page(driver_name).content
     wiki_text_with_formatted_headings = re.sub(r'=+\s*(.*?)\s*=+', r'<b>\1</b>', wiki_text)
     return wiki_text_with_formatted_headings
-
-
-

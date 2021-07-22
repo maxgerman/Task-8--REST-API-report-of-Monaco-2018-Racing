@@ -4,46 +4,13 @@ from wikipedia import wikipedia
 
 from drivers import Driver
 from utils import wiki
-from api import CustomApi, DriverApi, DriversListApi, ReportApi, InterceptRequestMiddleware
-
-
-
-
+from api import CustomApi, DriverApi, DriversListApi, ReportApi
 
 app = Flask(__name__)
-app.wsgi_app = InterceptRequestMiddleware(app.wsgi_app)
-
-
 app.secret_key = 'dev'
 
 api = CustomApi(app)
-
 swagger = Swagger(app)
-
-
-@app.before_request
-def set_the_api_format_based_on_get_parameter():
-    if request.endpoint is not None:
-        mime = 'application/xml' if request.args.get('format') == 'xml' else 'application/json'
-        InterceptRequestMiddleware.mime = mime
-
-
-@app.route('/debug')
-def debug():
-    import operator
-    mediatypes_or = [h for h, q in sorted(request.accept_mimetypes,
-                                     key=operator.itemgetter(1), reverse=True)]
-    accept_mimetypes = request.accept_mimetypes
-    mod_mediatypes = ['application/xml'] + mediatypes_or
-
-
-    context = {
-        'original mediatypes' : mediatypes_or,
-        'request.accept_mimetypes' : repr(accept_mimetypes),
-        'mod mediatypes' : mod_mediatypes,
-    }
-    return render_template('base.html', context=context)
-
 
 
 @app.route('/report', methods=['GET', 'POST'])
