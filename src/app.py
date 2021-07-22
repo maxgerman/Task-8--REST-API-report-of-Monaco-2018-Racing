@@ -1,17 +1,32 @@
 from flask import Flask, render_template, request, redirect, url_for, session, make_response
 from flasgger import Swagger
+from wikipedia import wikipedia
 
 from drivers import Driver
 from utils import wiki
-from api import CustomApi, DriverApi, DriversListApi, ReportApi
+from api import CustomApi, DriverApi, DriversListApi, ReportApi, InterceptRequestMiddleware
+
+
+
 
 
 app = Flask(__name__)
+app.wsgi_app = InterceptRequestMiddleware(app.wsgi_app)
+
+
 app.secret_key = 'dev'
 
 api = CustomApi(app)
 
 swagger = Swagger(app)
+
+
+@app.before_request
+def set_the_api_format_based_on_get_parameter():
+    if request.endpoint is not None:
+        mime = 'application/xml' if request.args.get('format') == 'xml' else 'application/json'
+        InterceptRequestMiddleware.mime = mime
+
 
 @app.route('/debug')
 def debug():

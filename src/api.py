@@ -1,26 +1,37 @@
 from flask import make_response, request
-from flask_restful import Resource, Api, reqparse
+from flask_restful import Resource, Api
 from flask_restful.representations.json import output_json
 import xml.etree.ElementTree as ET
 
 from drivers import Driver
-import utils
 
-parser = reqparse.RequestParser()
-parser.add_argument('format')
+
+class InterceptRequestMiddleware:
+    """Middleware to manually set request headers.
+    The 'mime' var of this class will be used to set the api format (json/xml) instead of the original request headers.
+    The problem: this setting takes effect only from the second request (load the page and then reload to switch format),
+    even with the use of @before_request decorated function
+    """
+
+    mime = 'application/json'
+
+    def __init__(self, wsgi_app):
+        self.wsgi_app = wsgi_app
+
+    def __call__(self, environ, start_response):
+        """ request cannot be accessed here (outside of request context) like this:
+        format = 'xml' if request.args.get('format') == 'xml' else 'json' """
+        environ['HTTP_ACCEPT'] = InterceptRequestMiddleware.mime
+        return self.wsgi_app(environ, start_response)
 
 
 class CustomApi(Api):
-    # FORMAT_MIMETYPE_MAP = {
-    #     "json": "application/json",
-    #     "xml": "application/xml",
-    # }
 
     @staticmethod
     def output_xml(data, code, headers=None):
         """Make a Flask response with a xml body. Used as a custom representation for API resources"""
 
-        def dict_to_tree_recursive(src_dict: dict, root: ET.ElementTree = None) -> ET.ElementTree:
+        def dict_to_tree_recursive(src_dict: dict, root: ET.Element = None) -> ET.ElementTree:
             """Convert data dict to the Element object (with all children) recursively.
             src_dict (data) is always a dict with a single key at the top level -- this is used as the root tag"""
             if root is None:
@@ -33,14 +44,11 @@ class CustomApi(Api):
                     dict_to_tree_recursive(value, child)
                 else:
                     child.text = value
-            return root
-
-        # data = '<XML><data>data1</data></XML>'
+            return root[0]
 
         tree = dict_to_tree_recursive(data)
         xml_string = ET.tostring(tree, xml_declaration=True, encoding="utf-8")
         resp = make_response(xml_string)
-        headers = {'X-my-output-function': 'output_xml'}
         resp.headers.extend(headers or {})
         return resp
 
@@ -51,40 +59,10 @@ class CustomApi(Api):
             'application/xml': __class__.output_xml,
         }
 
-    def mediatypes(self):
-        """Allow all resources to have their representation
-        overriden by the `format` URL argument"""
-
-        # format = 'xml' if request.args.get("format") == 'xml' else 'json'
-        # mimetype = CustomApi.FORMAT_MIMETYPE_MAP[format]
-        # mimetype = 'application/json'
-        # print([mimetype] + super().mediatypes())
-        return ['application/json']
-
-    def mediatypes_method(self):
-        """Return a method that returns a list of mediatypes"""
-        return lambda resource_cls: ['application/json']  # + self.mediatypes() + [self.default_mediatype]
 
 
 class DriversListApi(Resource):
     def get(self):
-        """
-        List all the drivers
-        It works also with swag_from, schemas and spec_dict
-        ---
-        parameters:
-
-        responses:
-          200:
-            description: A single user item
-            schema:
-              id: User
-              properties:
-                username:
-                  type: string
-                  description: The name of the user
-                  default: Steven Wilson
-         """
         drivers_dic = {'drivers': {}}
         for ind, d in enumerate(Driver.all()):
             drivers_dic['drivers'].update({f'driver{ind + 1}': d.driver_info_dictionary()})
@@ -93,31 +71,7 @@ class DriversListApi(Resource):
 
 class DriverApi(Resource):
     def get(self, name):
-        """
-        This examples uses FlaskRESTful Resource
-        It works also with swag_from, schemas and spec_dict
-        ---
-        parameters:
-          - in: path
-            name: name
-            type: string
-            required: true
-        responses:
-          200:
-            description: A single driver item
-            schema:
-              id: User
-              properties:
-                name:
-                  type: string
-                  description: The name of the user
-                  default: Steven Wilson
-                team:
-                    type: string
-                abbr:
-                    type: string
 
-         """
 
         args = parser.parse_args()
         format = 'xml' if args['format'] == 'xml' else 'json'
@@ -134,6 +88,8 @@ class DriverApi(Resource):
 
 class ReportApi(Resource):
     def get(self):
+        InterceptRequestMiddleware.mime = 'application/xml'
+
         asc_order = True
         report_dic = {'report': {}}
         drivers = Driver.all()
