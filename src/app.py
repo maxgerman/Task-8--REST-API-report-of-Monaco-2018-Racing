@@ -81,6 +81,6 @@ def internal_error(error):
 if __name__ == '__main__':
     Driver.build_report()
     api.add_resource(DriversListApi, '/api/v1/drivers/')
-    api.add_resource(DriverApi, '/api/v1/drivers/<name>/')
+    api.add_resource(DriverApi, '/api/v1/drivers/<driver_id>/')
     api.add_resource(ReportApi, '/api/v1/report/')
     app.run()

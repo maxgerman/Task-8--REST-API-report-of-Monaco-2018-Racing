@@ -171,7 +171,7 @@ class Driver:
             'name': self.name,
             'abbr': self.abbr,
             'team': self.team,
-            'start_time': str(self.start_time)[:-3],
-            'stop_time': str(self.stop_time)[:-3],
+            'start_time': self.start_time.strftime('%H:%M:%S.%f')[:-3],
+            'stop_time':  self.stop_time.strftime('%H:%M:%S.%f')[:-3],
             'best_lap_time': str(self.best_lap)[:-3],
         }

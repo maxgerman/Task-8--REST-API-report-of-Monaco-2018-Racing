@@ -9,7 +9,7 @@ from drivers import Driver
 class CustomApi(Api):
     """
     Custom flask_restful Api class for:
-        - providing additional representation to accept (xml)
+        - providing additional representation (xml)
         - output function to convert data (dicts) to xml strings
     """
 
@@ -48,6 +48,68 @@ class CustomApi(Api):
 
 class DriversListApi(Resource):
     def get(self):
+        """Return the drivers list API.
+        This docstring also contains all definitions of the API for flasgger (accessible at /apidocs/)
+
+        ---
+        parameters:
+         - in: query
+           name: format
+           type: string
+           enum: ['json', 'xml']
+           required: false
+           description: Specify which format the response will be in
+
+        definitions:
+          Driver:
+            type: object
+            properties:
+               name:
+                 type: string
+                 description: The name of the driver
+                 example: Brendon Hartley
+               abbr:
+                 type: string
+                 description: The abbreviation of the driver
+                 example: BHS
+               team:
+                 type: string
+                 description: The team name of the driver
+                 example: SCUDERIA TORO ROSSO HONDA
+               start_time:
+                 type: datetime
+                 description: The start time of the driver
+                 example: "12:14:51.985"
+               stop_time:
+                 type: datetime
+                 description: The finish time of the driver
+                 example: "12:16:05.164"
+               best_lap_time:
+                 type: timedelta
+                 description: The best lap time of the driver
+                 example: "0:01:13.179"
+          Drivers:
+            type: object
+            properties:
+                Drivers:
+                    type: array
+                    items:
+                        $ref: '#/definitions/Driver'
+          Report:
+            type: object
+            properties:
+                Report:
+                    type: array
+                    items:
+                        $ref: '#/definitions/Driver'
+
+        responses:
+         200:
+           description: All drivers
+           schema:
+             $ref: '#/definitions/Drivers'
+            """
+
         request.environ['HTTP_ACCEPT'] = 'application/xml' if request.args.get(
             'format') == 'xml' else 'application/json'
 
@@ -58,20 +120,62 @@ class DriversListApi(Resource):
 
 
 class DriverApi(Resource):
-    def get(self, name):
+    def get(self, driver_id):
+        """Return the info about one particular driver API.
+
+         ---
+        parameters:
+         - in: path
+           name: driver_id
+           type: string
+           required: false
+           description: driver id, abbreviation or name (full or partly)
+           example: ham
+         - in: query
+           name: format
+           type: string
+           enum: ['json', 'xml']
+           required: false
+           description: Specify which format the response will be in
+        responses:
+         200:
+           description: Driver
+           schema:
+             $ref: '#/definitions/Driver'
+         404:
+            description: A driver with the specified ID/abbr/name was not found
+        """
+
         request.environ['HTTP_ACCEPT'] = 'application/xml' if request.args.get(
             'format') == 'xml' else 'application/json'
 
         try:
-            d = Driver.get_by_id(name)[0].driver_info_dictionary()
+            d = Driver.get_by_id(driver_id)[0].driver_info_dictionary()
             result_dic = {'driver': d}
         except IndexError:
-            return {'error': f'driver \'{name}\' not found'}
+            return {'error': f'driver \'{driver_id}\' not found'}, 404
         return result_dic
 
 
 class ReportApi(Resource):
     def get(self):
+        """Return the report about the race.
+
+         ---
+        parameters:
+         - in: query
+           name: format
+           type: string
+           enum: ['json', 'xml']
+           required: false
+           description: Specify which format the response will be in
+
+        responses:
+         200:
+           description: Report
+           schema:
+             $ref: '#/definitions/Report'
+        """
         request.environ['HTTP_ACCEPT'] = 'application/xml' if request.args.get(
             'format') == 'xml' else 'application/json'
 
