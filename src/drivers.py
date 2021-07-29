@@ -134,6 +134,9 @@ class Driver:
         driver_query - if set, print the report of this only driver
         """
 
+        if not Driver._driver_list:
+            return ''
+
         if driver_query:
             for d in Driver._driver_list:
                 if driver_query.lower() in d.name.lower() or driver_query.lower() in d.abbr.lower():
@@ -172,6 +175,6 @@ class Driver:
             'abbr': self.abbr,
             'team': self.team,
             'start_time': self.start_time.strftime('%H:%M:%S.%f')[:-3],
-            'stop_time':  self.stop_time.strftime('%H:%M:%S.%f')[:-3],
+            'stop_time': self.stop_time.strftime('%H:%M:%S.%f')[:-3],
             'best_lap_time': str(self.best_lap)[:-3],
         }

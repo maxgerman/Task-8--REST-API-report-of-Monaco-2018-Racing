@@ -1,7 +1,7 @@
-from src.drivers import Driver
 import datetime as dt
 
-DATA_PATH = 'test_data'
+from src.drivers import Driver
+from .conftest import DATA_PATH
 
 
 def test_drivers_from_abbr():

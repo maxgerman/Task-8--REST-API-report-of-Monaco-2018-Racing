@@ -3,7 +3,7 @@ from flask_restful import Resource, Api
 from flask_restful.representations.json import output_json
 import xml.etree.ElementTree as ET
 
-from drivers import Driver
+from src.drivers import Driver
 
 
 class CustomApi(Api):
@@ -14,8 +14,8 @@ class CustomApi(Api):
     """
 
     @staticmethod
-    def output_xml(data, code, headers=None):
-        """Make a Flask response with a xml body (output function for xml representation, which we added in __init__)"""
+    def output_xml(data: dict, code, headers: dict = None) -> "Response":
+        """Make a Flask response with an xml body (output function for xml representation, which we added in __init__)"""
 
         def dict_to_tree_recursive(src_dict: dict, root: ET.Element = None) -> ET.ElementTree:
             """Convert the data dict to the etree.Element object (including all children) recursively.
@@ -39,6 +39,7 @@ class CustomApi(Api):
         return resp
 
     def __init__(self, *args, **kwargs):
+        """Register representation for xml"""
         super().__init__(*args, **kwargs)
         self.representations = {
             'application/json': output_json,
@@ -47,7 +48,7 @@ class CustomApi(Api):
 
 
 class DriversListApi(Resource):
-    def get(self):
+    def get(self) -> dict:
         """Return the drivers list API.
         This docstring also contains all definitions of the API for flasgger (accessible at /apidocs/)
 
@@ -158,7 +159,7 @@ class DriverApi(Resource):
 
 
 class ReportApi(Resource):
-    def get(self):
+    def get(self) -> dict:
         """Return the report about the race.
 
          ---

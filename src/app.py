@@ -2,9 +2,9 @@ from flask import Flask, render_template, request, redirect, url_for, session, m
 from flasgger import Swagger
 from wikipedia import wikipedia
 
-from drivers import Driver
-from utils import wiki
-from api import CustomApi, DriverApi, DriversListApi, ReportApi
+from src.drivers import Driver
+from src.utils import wiki
+from src.api import CustomApi, DriverApi, DriversListApi, ReportApi
 
 app = Flask(__name__)
 app.secret_key = 'dev'
@@ -33,7 +33,7 @@ def common_report() -> "Response":
             session['report_desc_switch'] = False
             return redirect(url_for('common_report'))
 
-    lines = Driver.print_report(asc=asc_order).split('\n')
+    lines = Driver.print_report(asc=asc_order).split('\n') if Driver.print_report() else []
     return render_template('report.html', lines=lines)
 
 
@@ -78,9 +78,10 @@ def internal_error(error):
     return render_template('base.html', context=500)
 
 
+api.add_resource(DriversListApi, '/api/v1/drivers/')
+api.add_resource(DriverApi, '/api/v1/drivers/<driver_id>/')
+api.add_resource(ReportApi, '/api/v1/report/')
+
 if __name__ == '__main__':
     Driver.build_report()
-    api.add_resource(DriversListApi, '/api/v1/drivers/')
-    api.add_resource(DriverApi, '/api/v1/drivers/<driver_id>/')
-    api.add_resource(ReportApi, '/api/v1/report/')
     app.run()

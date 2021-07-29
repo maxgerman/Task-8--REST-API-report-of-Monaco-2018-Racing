@@ -1,5 +1,5 @@
-import pytest
-from flask import session
+from flask import session, request, g
+from src.app import app
 
 
 def test_base_template(client):

@@ -14,10 +14,13 @@
         <label class="form-check-label" for="flexSwitchCheckChecked">descending order</label>
     </div>
 </form>
-
-    {% for line in lines %}
-        <p>
-        {{ line }}
-        </p>
-    {% endfor %}
+    {% if lines %}
+        {% for line in lines %}
+            <p>
+            {{ line }}
+            </p>
+        {% endfor %}
+    {% else %}
+        <h5>Empty report!</h5>
+    {% endif %}
 {% endblock content %}
