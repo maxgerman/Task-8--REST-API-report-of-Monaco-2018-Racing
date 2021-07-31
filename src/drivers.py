@@ -108,7 +108,7 @@ class Driver:
     @staticmethod
     def build_report(data_path: str = DATA_PATH, abbr_file: str = ABBR_FILE) -> list:
         """
-        Build the report based on files of name abbreviations and time logs in DATA_PATH. Calculate the best lap time for
+        Build the report based on files of name abbreviations and time logs in DATA_PATH. Calculate best lap time for
         each driver. Return the list of drivers.
         """
         drivers = Driver._drivers_from_abbr(data_path, abbr_file)

@@ -1,6 +1,5 @@
 import wikipedia
 import re
-from flask import make_response
 
 
 def wiki(driver_name: str) -> str:

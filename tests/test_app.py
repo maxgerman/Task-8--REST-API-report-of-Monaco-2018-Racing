@@ -1,5 +1,7 @@
-from flask import session, request, g
+from flask import session
+
 from src.app import app
+from tests.conftest import captured_templates
 
 
 def test_base_template(client):
@@ -66,3 +68,21 @@ def test_session_drivers_order_switch(build_report, client):
     with client as c:
         response = c.get('/drivers?order=desc')
         assert session['driver_desc_switch'] is True
+
+
+def test_drivers_context(build_report, client):
+    with captured_templates(app) as templates:
+        response = client.get('/drivers')
+        template, context = templates[0]
+        assert template.name == 'drivers.html'
+        assert response.status_code == 200
+        assert len(context['drivers']) == 19
+
+
+def test_report_context(build_report, client):
+    with captured_templates(app) as templates:
+        response = client.get('/report')
+        template, context = templates[0]
+        assert template.name == 'report.html'
+        assert response.status_code == 200
+        assert len(context['lines']) == 19 or 20

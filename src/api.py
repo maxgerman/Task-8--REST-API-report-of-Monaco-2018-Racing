@@ -15,9 +15,9 @@ class CustomApi(Api):
 
     @staticmethod
     def output_xml(data: dict, code, headers: dict = None) -> "Response":
-        """Make a Flask response with an xml body (output function for xml representation, which we added in __init__)"""
+        """Make a Flask response with xml body (output function for xml representation, which we added in __init__)"""
 
-        def dict_to_tree_recursive(src_dict: dict, root: ET.Element = None) -> ET.ElementTree:
+        def dict_to_tree_recursive(src_dict: dict, root: ET.Element = None) -> ET.Element:
             """Convert the data dict to the etree.Element object (including all children) recursively.
             src_dict (data) is always a dict with a single key at the top level -- this is used as the root tag"""
             if root is None:

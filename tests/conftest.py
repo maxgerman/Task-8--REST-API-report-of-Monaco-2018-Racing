@@ -1,7 +1,9 @@
 import pytest
+from contextlib import contextmanager
+from flask import template_rendered
+
 from src.drivers import Driver
-from src.app import app, api
-from src.api import DriverApi, DriversListApi, ReportApi
+from src.app import app
 
 
 # test data files
@@ -24,9 +26,15 @@ def build_report():
     Driver.build_report(data_path=DATA_PATH)
 
 
-# @pytest.fixture
-# def api_add_resources():
-#     """Adding api resources to the app"""
-#     api.add_resource(DriversListApi, '/api/v1/drivers/')
-#     api.add_resource(DriverApi, '/api/v1/drivers/<driver_id>/')
-#     api.add_resource(ReportApi, '/api/v1/report/')
+@contextmanager
+def captured_templates(app):
+    """Provides access to the rendered template name and context dict from the tests"""
+    recorded = []
+
+    def record(sender, template, context, **extra):
+        recorded.append((template, context))
+    template_rendered.connect(record, app)
+    try:
+        yield recorded
+    finally:
+        template_rendered.disconnect(record, app)
